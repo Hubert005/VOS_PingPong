@@ -7,21 +7,86 @@
 
 def Xform "Root"
 {
-    reorder nameChildren = ["Sphere_Left", "Sphere_Right", "GridMaterial"]
+    reorder nameChildren = ["Table", "SkyDome", "Video_Dock", "Cube"]
     def "SkyDome" (
         active = true
-        prepend references = @SkyDome.usdz@
+        references = @SkyDome.usdz@
     )
     {
         float3 xformOp:scale = (0.01, 0.01, 0.01)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+        over "mtl"
+        {
+            over "GroundMATSG"
+            {
+                token outputs:mtlx:surface
+                token outputs:realitykit:vertex
+
+                over "GroundMAT"
+                {
+                    color3f inputs:diffuseColor = (0, 0, 0) (
+                        colorSpace = "lin_srgb"
+                    )
+                }
+            }
+
+            over "GridMATSG"
+            {
+                token inputs:frame:stPrimvarName = "st" (
+                    customData = {
+                        dictionary realitykit = {
+                            bool hide = 1
+                        }
+                    }
+                )
+                token outputs:mtlx:surface
+                token outputs:realitykit:vertex
+
+                over "GridMAT"
+                {
+                    color3f inputs:diffuseColor = (0, 0, 0) (
+                        colorSpace = "lin_srgb"
+                    )
+                    color3f inputs:emissiveColor.connect = </Root/SkyDome/mtl/GridMATSG/emissiveColor.outputs:rgb>
+                }
+
+                def Shader "emissiveColor"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @Ground/DefaultAttenuationMap.exr@
+                    float2 inputs:st.connect = </Root/SkyDome/mtl/GridMATSG/emissiveColor/TexCoordReader.outputs:result>
+                    color3f outputs:rgb
+
+                    def Shader "TexCoordReader"
+                    {
+                        uniform token info:id = "UsdPrimvarReader_float2"
+                        token inputs:varname.connect = </Root/SkyDome/mtl/GridMATSG.inputs:frame:stPrimvarName>
+                        float2 outputs:result
+                    }
+                }
+            }
+
+            over "DomeMATSG"
+            {
+                token outputs:mtlx:surface
+                token outputs:realitykit:vertex
+
+                over "DomeMAT"
+                {
+                    color3f inputs:diffuseColor = (0, 0, 0) (
+                        colorSpace = "lin_srgb"
+                    )
+                }
+            }
+        }
     }
 
     def Xform "Video_Dock" (
+        active = false
         references = None
     )
     {
-        double3 xformOp:translate = (0, 0.8, -3)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
         def Xform "Player"
@@ -42,9 +107,210 @@ def Xform "Root"
         }
 
         def "Ground" (
-            prepend references = @Ground/Ground.usda@
+            references = @Ground/Ground.usda@
         )
         {
+            over "Material"
+            {
+                over "Mix_1"
+                {
+                    color3f inputs:bg = (0.18407534, 0, 0) (
+                        colorSpace = "lin_srgb"
+                    )
+                    int ui:nodegraph:node:stackingOrder = 215
+                }
+            }
+        }
+    }
+
+    def RealityKitMeshSortingGroup "Table" (
+        active = true
+        references = @Ground/Ground.usda@
+    )
+    {
+        reorder nameChildren = ["Mesh", "Material", "Material_1", "Cube"]
+        def Cube "Cube" (
+            active = true
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            reorder nameChildren = ["DefaultMaterial", "Cylinder", "Cylinder_1", "Cylinder_2", "Cylinder_3"]
+            rel material:binding = </Root/Table/Cube/DefaultMaterial>
+            double size = 0.2
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (5, 0.5, 10)
+            float3 xformOp:translate = (0, 1, -2.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+            def Material "DefaultMaterial"
+            {
+                token outputs:mtlx:surface
+                token outputs:realitykit:vertex
+                token outputs:surface.connect = </Root/Table/Cube/DefaultMaterial/DefaultSurfaceShader.outputs:surface>
+
+                def Shader "DefaultSurfaceShader"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor = (0, 0.97680455, 0) (
+                        colorSpace = "srgb_texture"
+                    )
+                    float inputs:roughness = 0.75
+                    token outputs:surface
+                }
+            }
+
+            def Cylinder "Cylinder" (
+                active = true
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.2
+                rel material:binding = </Root/Table/Cube/Cylinder/DefaultMaterial>
+                double radius = 0.1
+                quatf xformOp:orient = (1, 0, 0, 0)
+                float3 xformOp:scale = (0.099999994, 5.5, 0.05)
+                float3 xformOp:translate = (0.09, -0.65, 0.095)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                def Material "DefaultMaterial"
+                {
+                    token outputs:mtlx:surface
+                    token outputs:realitykit:vertex
+                    token outputs:surface.connect = </Root/Table/Cube/Cylinder/DefaultMaterial/DefaultSurfaceShader.outputs:surface>
+
+                    def Shader "DefaultSurfaceShader"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.016804177, 0.198351, 1) (
+                            colorSpace = "srgb_texture"
+                        )
+                        float inputs:roughness = 0.75
+                        token outputs:surface
+                    }
+                }
+            }
+
+            def Cylinder "Cylinder_1" (
+                active = true
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.2
+                rel material:binding = </Root/Table/Cube/Cylinder_1/DefaultMaterial>
+                double radius = 0.1
+                float2 ui:nodegraph:node:pos = (-140.125, 155)
+                int ui:nodegraph:node:stackingOrder = 1
+                quatf xformOp:orient = (1, 0, 0, 0)
+                float3 xformOp:scale = (0.099999994, 5.5, 0.049999997)
+                float3 xformOp:translate = (0.08999999, -0.65, -0.09499999)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                def Material "DefaultMaterial"
+                {
+                    token outputs:mtlx:surface
+                    token outputs:realitykit:vertex
+                    token outputs:surface.connect = </Root/Table/Cube/Cylinder_1/DefaultMaterial/DefaultSurfaceShader.outputs:surface>
+
+                    def Shader "DefaultSurfaceShader"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.016804177, 0.198351, 1) (
+                            colorSpace = "srgb_texture"
+                        )
+                        float inputs:roughness = 0.75
+                        token outputs:surface
+                    }
+                }
+            }
+
+            def Cylinder "Cylinder_2" (
+                active = true
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.2
+                rel material:binding = </Root/Table/Cube/Cylinder_2/DefaultMaterial>
+                double radius = 0.1
+                float2 ui:nodegraph:node:pos = (-140.125, 155)
+                int ui:nodegraph:node:stackingOrder = 1
+                quatf xformOp:orient = (1, 0, 0, 0)
+                float3 xformOp:scale = (0.099999994, 5.5, 0.049999997)
+                float3 xformOp:translate = (-0.08999999, -0.65, 0.09499999)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                def Material "DefaultMaterial"
+                {
+                    token outputs:mtlx:surface
+                    token outputs:realitykit:vertex
+                    token outputs:surface.connect = </Root/Table/Cube/Cylinder_2/DefaultMaterial/DefaultSurfaceShader.outputs:surface>
+
+                    def Shader "DefaultSurfaceShader"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.016804177, 0.198351, 1) (
+                            colorSpace = "srgb_texture"
+                        )
+                        float inputs:roughness = 0.75
+                        token outputs:surface
+                    }
+                }
+            }
+
+            def Cylinder "Cylinder_3" (
+                active = true
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.2
+                rel material:binding = </Root/Table/Cube/Cylinder_3/DefaultMaterial>
+                double radius = 0.1
+                float2 ui:nodegraph:node:pos = (-140.125, 155)
+                int ui:nodegraph:node:stackingOrder = 1
+                quatf xformOp:orient = (1, 0, 0, 0)
+                float3 xformOp:scale = (0.099999994, 5.5, 0.049999997)
+                float3 xformOp:translate = (-0.08999999, -0.65, -0.09499999)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                def Material "DefaultMaterial"
+                {
+                    token outputs:mtlx:surface
+                    token outputs:realitykit:vertex
+                    token outputs:surface.connect = </Root/Table/Cube/Cylinder_3/DefaultMaterial/DefaultSurfaceShader.outputs:surface>
+
+                    def Shader "DefaultSurfaceShader"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.016804177, 0.198351, 1) (
+                            colorSpace = "srgb_texture"
+                        )
+                        float inputs:roughness = 0.75
+                        token outputs:surface
+                    }
+                }
+            }
+        }
+
+        def Material "Material_1" (
+            references = @Ground/Ground.usda@
+        )
+        {
+            token outputs:mtlx:surface
+            token outputs:realitykit:vertex
+            token outputs:surface.connect = </Root/Table/Material_1/UsdPreviewSurface.outputs:surface>
+            float2 ui:nodegraph:realitykit:subgraphOutputs:pos = (0, 110.5)
+
+            def Shader "UsdPreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.6679979, 0.47512126, 0.2586011) (
+                    colorSpace = "srgb_texture"
+                )
+                token outputs:surface
+            }
         }
     }
 }

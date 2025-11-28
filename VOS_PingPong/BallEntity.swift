@@ -151,6 +151,28 @@ class BallEntity: Entity {
         }
     }
     
+    /// Checks if the ball is outside the play area boundaries
+    /// - Returns: True if the ball is out of bounds, false otherwise
+    func isOutOfBounds() -> Bool {
+        let bounds = configuration.playAreaBounds
+        let pos = self.position
+        
+        return pos.x < bounds.min.x || pos.x > bounds.max.x ||
+               pos.y < bounds.min.y || pos.y > bounds.max.y ||
+               pos.z < bounds.min.z || pos.z > bounds.max.z
+    }
+    
+    /// Repositions the ball to the starting position if out of bounds
+    /// - Returns: True if the ball was repositioned, false if it was in bounds
+    @discardableResult
+    func repositionIfOutOfBounds() -> Bool {
+        if isOutOfBounds() {
+            reset(to: configuration.ballStartPosition)
+            return true
+        }
+        return false
+    }
+    
     // MARK: - Factory Method
     
     /// Creates a ball entity using the game configuration

@@ -17,6 +17,7 @@ struct ImmersiveView: View {
     @State private var audioManager = AudioManager()
     @State private var collisionHandler: CollisionHandler?
     @State private var collisionSubscription: EventSubscription?
+    @State private var ball: BallEntity?
 
     var body: some View {
         RealityView { content in
@@ -35,14 +36,17 @@ struct ImmersiveView: View {
             // Create game entities
             let table = TableEntity.create(with: configuration)
             let wall = WallEntity.create(with: configuration)
-            let ball = BallEntity.create(with: configuration)
+            let ballEntity = BallEntity.create(with: configuration)
             let ground = GroundEntity.create(with: configuration)
             let racket = RacketEntity.create()
+            
+            // Store ball reference for boundary checking
+            ball = ballEntity
             
             // Add entities to the scene
             content.add(table)
             content.add(wall)
-            content.add(ball)
+            content.add(ballEntity)
             content.add(ground)
             content.add(racket)
             
@@ -56,6 +60,11 @@ struct ImmersiveView: View {
             
             // Start the game
             gameManager.startGame()
+        } update: { content in
+            // Update loop for boundary checking
+            if let ball = ball, gameManager.isGameActive {
+                ball.repositionIfOutOfBounds()
+            }
         }
     }
 }

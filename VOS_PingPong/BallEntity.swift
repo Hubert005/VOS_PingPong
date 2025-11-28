@@ -106,12 +106,10 @@ class BallEntity: Entity {
     func reset(to position: SIMD3<Float>) {
         self.position = position
         
-        // In RealityKit for VisionOS, we reset physics by recreating the component
-        // or by applying forces to stop motion
-        if let physicsBody = self.components[PhysicsBodyComponent.self] {
-            // Apply a strong damping or recreate the physics body to stop motion
-            // For now, we'll rely on the physics system to handle this
-            // The position reset will effectively stop the ball
+        // Stop all motion by setting velocities to zero
+        if var physicsBody = self.components[PhysicsBodyComponent.self] {
+            physicsBody.linearVelocity = .zero
+            physicsBody.angularVelocity = .zero
             self.components[PhysicsBodyComponent.self] = physicsBody
         }
     }
@@ -119,18 +117,37 @@ class BallEntity: Entity {
     /// Applies an impulse to the ball (used for racket hits)
     /// - Parameter impulse: The impulse vector to apply
     func applyImpulse(_ impulse: SIMD3<Float>) {
-        // In RealityKit, impulses are applied through the physics simulation
-        // We'll use applyLinearImpulse method if available, or store for later use
-        // For now, this is a placeholder that will be implemented when integrated
-        // with the actual RealityKit physics system
+        guard var physicsBody = self.components[PhysicsBodyComponent.self] else {
+            return
+        }
+        
+        // Apply impulse by adding to current velocity
+        // Impulse = mass * velocity change, so velocity change = impulse / mass
+        let mass = physicsBody.massProperties.mass
+        let velocityChange = impulse / mass
+        
+        physicsBody.linearVelocity += velocityChange
+        self.components[PhysicsBodyComponent.self] = physicsBody
+        
+        // Clamp velocity after applying impulse
+        clampVelocity(max: configuration.maxBallVelocity)
     }
     
     /// Clamps the ball's velocity to prevent unrealistic behavior
     /// - Parameter max: Maximum allowed velocity magnitude
     func clampVelocity(max: Float) {
-        // Velocity clamping will be handled in the physics update loop
-        // by checking the ball's velocity and applying counter-forces if needed
-        // This is a placeholder for the actual implementation
+        guard var physicsBody = self.components[PhysicsBodyComponent.self] else {
+            return
+        }
+        
+        let velocity = physicsBody.linearVelocity
+        let speed = length(velocity)
+        
+        if speed > max {
+            let direction = normalize(velocity)
+            physicsBody.linearVelocity = direction * max
+            self.components[PhysicsBodyComponent.self] = physicsBody
+        }
     }
     
     // MARK: - Factory Method

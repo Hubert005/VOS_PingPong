@@ -43,6 +43,37 @@ struct GameManagerTests {
         }
     }
     
+    // MARK: - Property 10: Hit counter increments on collision
+    // Feature: ar-pingpong-game, Property 10: Hit counter increments on collision
+    // Validates: Requirements 4.1
+    
+    @Test("Property 10: Hit counter increments on collision")
+    func testHitCounterIncrementsOnCollision() throws {
+        try PropertyTestHelper.runPropertyTest(iterations: 100) {
+            // Create a GameManager and start the game
+            let manager = GameManager()
+            manager.startGame()
+            
+            // Generate a random starting hit count
+            let startingHits = PropertyGenerator.randomInt(min: 0, max: 50)
+            
+            // Set up initial state
+            for _ in 0..<startingHits {
+                manager.recordHit()
+            }
+            
+            let hitCountBefore = manager.consecutiveHits
+            
+            // Record one more hit (simulating a racket-ball collision)
+            manager.recordHit()
+            
+            let hitCountAfter = manager.consecutiveHits
+            
+            // Verify hit counter incremented by exactly 1
+            #expect(hitCountAfter == hitCountBefore + 1, "Hit counter should increment by exactly 1 on each collision")
+        }
+    }
+    
     // MARK: - Property 11: Score calculation from hits
     // Feature: ar-pingpong-game, Property 11: Score calculation from hits
     // Validates: Requirements 4.2

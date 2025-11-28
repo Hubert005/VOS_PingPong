@@ -13,13 +13,17 @@ struct ImmersiveView: View {
     @Environment(AppModel.self) var appModel
     
     // Game components
-    @State private var gameManager = GameManager()
     @State private var handTrackingManager: HandTrackingManager?
     @State private var audioManager = AudioManager()
     @State private var collisionHandler: CollisionHandler?
     @State private var collisionSubscription: EventSubscription?
     @State private var ball: BallEntity?
     @State private var racket: RacketEntity?
+    
+    // Use shared game manager from AppModel
+    private var gameManager: GameManager {
+        appModel.gameManager
+    }
 
     var body: some View {
         RealityView { content, attachments in

@@ -18,4 +18,7 @@ class AppModel {
         case open
     }
     var immersiveSpaceState = ImmersiveSpaceState.closed
+    
+    /// Shared game manager instance
+    var gameManager = GameManager()
 }

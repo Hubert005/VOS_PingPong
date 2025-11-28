@@ -7,6 +7,7 @@
 
 import Foundation
 import RealityKit
+import UIKit
 
 /// Entity representing the ping pong table surface
 class TableEntity: Entity {

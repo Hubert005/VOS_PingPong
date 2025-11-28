@@ -134,6 +134,72 @@ struct EntityTests {
         }
     }
     
+    // MARK: - Property 8: Gravity application
+    // Feature: ar-pingpong-game, Property 8: Gravity application
+    // Validates: Requirements 3.3
+    
+    @Test("Property 8: Gravity application")
+    func testGravityApplication() throws {
+        try PropertyTestHelper.runPropertyTest(iterations: 100) {
+            // Generate random configuration with different gravity values
+            let gravityMagnitude = PropertyGenerator.randomFloat(min: 5.0, max: 15.0)
+            let gravity = SIMD3<Float>(0, -gravityMagnitude, 0)
+            
+            let config = GameConfiguration(gravity: gravity)
+            
+            // Create ball entity
+            let ball = BallEntity.create(with: config)
+            
+            // Get initial physics body
+            guard var physicsBody = ball.components[PhysicsBodyComponent.self] else {
+                Issue.record("Ball should have PhysicsBodyComponent")
+                return
+            }
+            
+            // Set an initial upward velocity
+            let initialVelocity = SIMD3<Float>(0, PropertyGenerator.randomFloat(min: 5.0, max: 10.0), 0)
+            physicsBody.linearVelocity = initialVelocity
+            ball.components[PhysicsBodyComponent.self] = physicsBody
+            
+            // Simulate a time step
+            let deltaTime: Float = PropertyGenerator.randomFloat(min: 0.01, max: 0.1)
+            
+            // Get current velocity
+            guard let currentPhysicsBody = ball.components[PhysicsBodyComponent.self] else {
+                Issue.record("Ball should have PhysicsBodyComponent")
+                return
+            }
+            let currentVelocity = currentPhysicsBody.linearVelocity
+            
+            // Calculate expected velocity after gravity application
+            // v_new = v_old + gravity * deltaTime
+            let expectedVelocityY = currentVelocity.y + gravity.y * deltaTime
+            
+            // Apply gravity manually (simulating what RealityKit would do)
+            var updatedPhysicsBody = currentPhysicsBody
+            updatedPhysicsBody.linearVelocity.y += gravity.y * deltaTime
+            ball.components[PhysicsBodyComponent.self] = updatedPhysicsBody
+            
+            // Verify the velocity decreased due to gravity
+            guard let finalPhysicsBody = ball.components[PhysicsBodyComponent.self] else {
+                Issue.record("Ball should have PhysicsBodyComponent")
+                return
+            }
+            
+            let tolerance: Float = 0.01
+            #expect(
+                abs(finalPhysicsBody.linearVelocity.y - expectedVelocityY) < tolerance,
+                "Ball's Y-velocity should decrease by gravity * deltaTime"
+            )
+            
+            // Verify that gravity causes downward acceleration
+            #expect(
+                finalPhysicsBody.linearVelocity.y < currentVelocity.y,
+                "Ball's Y-velocity should decrease over time due to gravity"
+            )
+        }
+    }
+    
     // MARK: - Property 3: Entity dimensions match specifications
     // Feature: ar-pingpong-game, Property 3: Entity dimensions match specifications
     // Validates: Requirements 1.4

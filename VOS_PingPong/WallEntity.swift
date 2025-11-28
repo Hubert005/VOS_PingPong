@@ -7,6 +7,7 @@
 
 import Foundation
 import RealityKit
+import UIKit
 
 /// Entity representing the wall at the end of the ping pong table
 class WallEntity: Entity {

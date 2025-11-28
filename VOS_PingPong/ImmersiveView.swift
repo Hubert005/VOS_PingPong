@@ -14,6 +14,7 @@ struct ImmersiveView: View {
     
     // Game components
     @State private var gameManager = GameManager()
+    @State private var audioManager = AudioManager()
     @State private var collisionHandler: CollisionHandler?
     @State private var collisionSubscription: EventSubscription?
 
@@ -27,8 +28,8 @@ struct ImmersiveView: View {
             // Create game configuration
             let configuration = GameConfiguration()
             
-            // Initialize collision handler
-            let handler = CollisionHandler(configuration: configuration, gameManager: gameManager)
+            // Initialize collision handler with audio manager
+            let handler = CollisionHandler(configuration: configuration, gameManager: gameManager, audioManager: audioManager)
             collisionHandler = handler
             
             // Create game entities

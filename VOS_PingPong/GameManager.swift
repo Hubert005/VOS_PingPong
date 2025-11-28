@@ -37,7 +37,7 @@ class GameManager {
     
     /// Creates a new GameManager with the specified configuration
     /// - Parameter configuration: Game configuration (defaults to standard configuration)
-    init(configuration: GameConfiguration = GameConfiguration()) {
+    nonisolated init(configuration: GameConfiguration = GameConfiguration()) {
         self.configuration = configuration
     }
     

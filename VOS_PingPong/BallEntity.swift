@@ -107,17 +107,18 @@ class BallEntity: Entity {
         self.position = position
         
         // Stop all motion by setting velocities to zero
-        if var physicsBody = self.components[PhysicsBodyComponent.self] {
-            physicsBody.linearVelocity = .zero
-            physicsBody.angularVelocity = .zero
-            self.components[PhysicsBodyComponent.self] = physicsBody
+        if var physicsMotion = self.components[PhysicsMotionComponent.self] {
+            physicsMotion.linearVelocity = .zero
+            physicsMotion.angularVelocity = .zero
+            self.components[PhysicsMotionComponent.self] = physicsMotion
         }
     }
     
     /// Applies an impulse to the ball (used for racket hits)
     /// - Parameter impulse: The impulse vector to apply
     func applyImpulse(_ impulse: SIMD3<Float>) {
-        guard var physicsBody = self.components[PhysicsBodyComponent.self] else {
+        guard let physicsBody = self.components[PhysicsBodyComponent.self],
+              var physicsMotion = self.components[PhysicsMotionComponent.self] else {
             return
         }
         
@@ -126,8 +127,8 @@ class BallEntity: Entity {
         let mass = physicsBody.massProperties.mass
         let velocityChange = impulse / mass
         
-        physicsBody.linearVelocity += velocityChange
-        self.components[PhysicsBodyComponent.self] = physicsBody
+        physicsMotion.linearVelocity += velocityChange
+        self.components[PhysicsMotionComponent.self] = physicsMotion
         
         // Clamp velocity after applying impulse
         clampVelocity(max: configuration.maxBallVelocity)
@@ -136,17 +137,17 @@ class BallEntity: Entity {
     /// Clamps the ball's velocity to prevent unrealistic behavior
     /// - Parameter max: Maximum allowed velocity magnitude
     func clampVelocity(max: Float) {
-        guard var physicsBody = self.components[PhysicsBodyComponent.self] else {
+        guard var physicsMotion = self.components[PhysicsMotionComponent.self] else {
             return
         }
         
-        let velocity = physicsBody.linearVelocity
+        let velocity = physicsMotion.linearVelocity
         let speed = length(velocity)
         
         if speed > max {
             let direction = normalize(velocity)
-            physicsBody.linearVelocity = direction * max
-            self.components[PhysicsBodyComponent.self] = physicsBody
+            physicsMotion.linearVelocity = direction * max
+            self.components[PhysicsMotionComponent.self] = physicsMotion
         }
     }
     

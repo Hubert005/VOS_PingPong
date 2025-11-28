@@ -20,6 +20,9 @@ class CollisionHandler {
     /// Game manager for tracking hits and game state
     private weak var gameManager: GameManager?
     
+    /// Audio manager for playing collision sounds
+    private let audioManager: AudioManager
+    
     /// Restitution coefficient for table tennis ball (bounciness)
     private let restitution: Float = 0.89
     
@@ -32,9 +35,11 @@ class CollisionHandler {
     /// - Parameters:
     ///   - configuration: Game configuration
     ///   - gameManager: Game manager for tracking game state
-    init(configuration: GameConfiguration, gameManager: GameManager) {
+    ///   - audioManager: Audio manager for playing sounds
+    init(configuration: GameConfiguration, gameManager: GameManager, audioManager: AudioManager) {
         self.configuration = configuration
         self.gameManager = gameManager
+        self.audioManager = audioManager
     }
     
     // MARK: - Collision Handling Methods
@@ -45,11 +50,11 @@ class CollisionHandler {
     ///   - ball: The ball entity
     ///   - table: The table entity
     func handleBallTableCollision(ball: Entity, table: Entity) {
-        guard var physicsBody = ball.components[PhysicsBodyComponent.self] else {
+        guard var physicsMotion = ball.components[PhysicsMotionComponent.self] else {
             return
         }
         
-        let velocity = physicsBody.linearVelocity
+        let velocity = physicsMotion.linearVelocity
         
         // Table surface normal points upward (0, 1, 0)
         let surfaceNormal = SIMD3<Float>(0, 1, 0)
@@ -61,11 +66,14 @@ class CollisionHandler {
             restitution: restitution
         )
         
-        physicsBody.linearVelocity = reflectedVelocity
-        ball.components[PhysicsBodyComponent.self] = physicsBody
+        physicsMotion.linearVelocity = reflectedVelocity
+        ball.components[PhysicsMotionComponent.self] = physicsMotion
         
         // Clamp velocity to prevent unrealistic speeds
         clampBallVelocity(ball: ball)
+        
+        // Play table bounce sound at collision position
+        audioManager.playTableBounceSound(at: ball.position)
     }
     
     /// Handles collision between ball and wall
@@ -74,11 +82,11 @@ class CollisionHandler {
     ///   - ball: The ball entity
     ///   - wall: The wall entity
     func handleBallWallCollision(ball: Entity, wall: Entity) {
-        guard var physicsBody = ball.components[PhysicsBodyComponent.self] else {
+        guard var physicsMotion = ball.components[PhysicsMotionComponent.self] else {
             return
         }
         
-        let velocity = physicsBody.linearVelocity
+        let velocity = physicsMotion.linearVelocity
         
         // Wall normal points back toward player (0, 0, 1)
         let wallNormal = SIMD3<Float>(0, 0, 1)
@@ -90,11 +98,14 @@ class CollisionHandler {
             restitution: restitution
         )
         
-        physicsBody.linearVelocity = reflectedVelocity
-        ball.components[PhysicsBodyComponent.self] = physicsBody
+        physicsMotion.linearVelocity = reflectedVelocity
+        ball.components[PhysicsMotionComponent.self] = physicsMotion
         
         // Clamp velocity to prevent unrealistic speeds
         clampBallVelocity(ball: ball)
+        
+        // Play wall bounce sound at collision position
+        audioManager.playWallBounceSound(at: ball.position)
     }
     
     /// Handles collision between ball and racket
@@ -103,7 +114,7 @@ class CollisionHandler {
     ///   - ball: The ball entity
     ///   - racket: The racket entity (should be RacketEntity)
     func handleBallRacketCollision(ball: Entity, racket: Entity) {
-        guard var ballPhysicsBody = ball.components[PhysicsBodyComponent.self] else {
+        guard var ballPhysicsMotion = ball.components[PhysicsMotionComponent.self] else {
             return
         }
         
@@ -116,17 +127,20 @@ class CollisionHandler {
             racketVelocity = .zero
         }
         
-        let ballVelocity = ballPhysicsBody.linearVelocity
+        let ballVelocity = ballPhysicsMotion.linearVelocity
         
         // Transfer velocity from racket to ball
         let velocityTransfer = racketVelocity * velocityTransferCoefficient
         let newVelocity = ballVelocity + velocityTransfer
         
-        ballPhysicsBody.linearVelocity = newVelocity
-        ball.components[PhysicsBodyComponent.self] = ballPhysicsBody
+        ballPhysicsMotion.linearVelocity = newVelocity
+        ball.components[PhysicsMotionComponent.self] = ballPhysicsMotion
         
         // Clamp velocity to prevent unrealistic speeds
         clampBallVelocity(ball: ball)
+        
+        // Play ball hit sound at collision position
+        audioManager.playBallHitSound(at: ball.position)
         
         // Record hit in game manager
         gameManager?.recordHit()
@@ -139,11 +153,14 @@ class CollisionHandler {
     ///   - ground: The ground entity
     func handleBallGroundCollision(ball: Entity, ground: Entity) {
         // Stop ball physics
-        if var physicsBody = ball.components[PhysicsBodyComponent.self] {
-            physicsBody.linearVelocity = .zero
-            physicsBody.angularVelocity = .zero
-            ball.components[PhysicsBodyComponent.self] = physicsBody
+        if var physicsMotion = ball.components[PhysicsMotionComponent.self] {
+            physicsMotion.linearVelocity = .zero
+            physicsMotion.angularVelocity = .zero
+            ball.components[PhysicsMotionComponent.self] = physicsMotion
         }
+        
+        // Play game over sound
+        audioManager.playGameOverSound()
         
         // Notify game manager
         gameManager?.handleGroundCollision()
@@ -177,17 +194,17 @@ class CollisionHandler {
     /// Clamps the ball's velocity to the maximum allowed velocity
     /// - Parameter ball: The ball entity
     private func clampBallVelocity(ball: Entity) {
-        guard var physicsBody = ball.components[PhysicsBodyComponent.self] else {
+        guard var physicsMotion = ball.components[PhysicsMotionComponent.self] else {
             return
         }
         
-        let velocity = physicsBody.linearVelocity
+        let velocity = physicsMotion.linearVelocity
         let speed = length(velocity)
         
         if speed > configuration.maxBallVelocity {
             let direction = normalize(velocity)
-            physicsBody.linearVelocity = direction * configuration.maxBallVelocity
-            ball.components[PhysicsBodyComponent.self] = physicsBody
+            physicsMotion.linearVelocity = direction * configuration.maxBallVelocity
+            ball.components[PhysicsMotionComponent.self] = physicsMotion
         }
     }
     

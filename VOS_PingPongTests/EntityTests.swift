@@ -200,6 +200,72 @@ struct EntityTests {
         }
     }
     
+    // MARK: - Property 13: Ground collision detection
+    // Feature: ar-pingpong-game, Property 13: Ground collision detection
+    // Validates: Requirements 5.1
+    
+    @Test("Property 13: Ground collision detection")
+    func testGroundCollisionDetection() throws {
+        try PropertyTestHelper.runPropertyTest(iterations: 100) {
+            // Generate random ground level
+            let groundLevel = PropertyGenerator.randomFloat(min: -0.5, max: 0.5)
+            
+            let config = GameConfiguration(groundLevel: groundLevel)
+            
+            // Create ground entity
+            let ground = GroundEntity.create(with: config)
+            
+            // Verify ground is positioned at the correct level
+            let tolerance: Float = 0.001
+            #expect(
+                abs(ground.position.y - groundLevel) < tolerance,
+                "Ground should be positioned at the specified ground level"
+            )
+            
+            // Verify ground has collision component
+            #expect(
+                ground.components[CollisionComponent.self] != nil,
+                "Ground should have a CollisionComponent for collision detection"
+            )
+            
+            // Verify ground is named correctly for identification
+            #expect(
+                ground.name == CollisionType.ground.rawValue,
+                "Ground should be named with the ground collision type"
+            )
+            
+            // Test the isAtGroundLevel helper method
+            // Generate random Y positions and verify detection
+            let numPositionTests = 10
+            for _ in 0..<numPositionTests {
+                let testY = PropertyGenerator.randomFloat(min: groundLevel - 2.0, max: groundLevel + 2.0)
+                let shouldDetect = testY <= groundLevel
+                let detected = ground.isAtGroundLevel(testY)
+                
+                #expect(
+                    detected == shouldDetect,
+                    "isAtGroundLevel should return true for Y <= groundLevel, false otherwise"
+                )
+            }
+            
+            // Specifically test boundary conditions
+            #expect(
+                ground.isAtGroundLevel(groundLevel) == true,
+                "Position exactly at ground level should be detected"
+            )
+            
+            #expect(
+                ground.isAtGroundLevel(groundLevel - 0.001) == true,
+                "Position below ground level should be detected"
+            )
+            
+            #expect(
+                ground.isAtGroundLevel(groundLevel + 0.001) == false,
+                "Position above ground level should not be detected"
+            )
+        }
+    }
+    
     // MARK: - Property 3: Entity dimensions match specifications
     // Feature: ar-pingpong-game, Property 3: Entity dimensions match specifications
     // Validates: Requirements 1.4

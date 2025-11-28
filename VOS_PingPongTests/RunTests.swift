@@ -12,10 +12,11 @@ import Testing
 @main
 struct TestRunner {
     static func main() async {
-        print("Running Property-Based Tests for Hit Detection...")
+        print("Running Property-Based Tests...")
         print("=" * 60)
         
         await runGameManagerTests()
+        await runHandTrackingTests()
         
         print("\n" + "=" * 60)
         print("All tests completed!")
@@ -53,6 +54,35 @@ struct TestRunner {
             print("\n🧪 Testing Property 15: Game reset restores initial state")
             try tests.testGameResetRestoresInitialState()
             print("✅ PASSED: Game reset works correctly")
+        } catch {
+            print("❌ FAILED: \(error)")
+        }
+        
+        do {
+            print("\n🧪 Testing Property 12: UI state synchronization")
+            try tests.testUIStateSynchronization()
+            print("✅ PASSED: UI state synchronization works correctly")
+        } catch {
+            print("❌ FAILED: \(error)")
+        }
+    }
+    
+    @MainActor
+    static func runHandTrackingTests() async {
+        let tests = HandTrackingTests()
+        
+        do {
+            print("\n🧪 Testing Property 18: Tracking loss pauses game")
+            try tests.testTrackingLossPausesGame()
+            print("✅ PASSED: Tracking loss pauses game correctly")
+        } catch {
+            print("❌ FAILED: \(error)")
+        }
+        
+        do {
+            print("\n🧪 Testing Property 19: Tracking restoration resumes game")
+            try tests.testTrackingRestorationResumesGame()
+            print("✅ PASSED: Tracking restoration resumes game correctly")
         } catch {
             print("❌ FAILED: \(error)")
         }

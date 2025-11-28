@@ -15,6 +15,9 @@ enum GameState {
     /// Game is actively being played
     case playing
     
+    /// Game is paused (e.g., due to tracking loss)
+    case paused
+    
     /// Game has ended (ball hit ground)
     case gameOver
 }

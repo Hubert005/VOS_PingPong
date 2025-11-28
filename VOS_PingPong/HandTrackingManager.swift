@@ -22,16 +22,28 @@ class HandTrackingManager {
     /// Current hand transform (position and orientation)
     var handTransform: Transform?
     
+    /// Whether tracking was lost during active gameplay
+    var trackingLost: Bool = false
+    
     /// ARKit session for hand tracking
     private var arSession: ARKitSession?
     
     /// Hand tracking provider
     private var handTracking: HandTrackingProvider?
     
+    /// Reference to game manager for pause/resume functionality
+    private weak var gameManager: GameManager?
+    
     // MARK: - Initialization
     
-    init() {
-        // Initialization will be completed when startTracking is called
+    init(gameManager: GameManager? = nil) {
+        self.gameManager = gameManager
+    }
+    
+    /// Sets the game manager reference
+    /// - Parameter gameManager: The game manager to control
+    func setGameManager(_ gameManager: GameManager) {
+        self.gameManager = gameManager
     }
     
     // MARK: - Methods
@@ -113,6 +125,13 @@ class HandTrackingManager {
                     // Update hand transform
                     self.handTransform = worldTransform
                     
+                    // If tracking was previously lost and is now restored, resume the game
+                    if trackingLost {
+                        trackingLost = false
+                        gameManager?.resumeGame()
+                        print("Hand tracking restored - game resumed")
+                    }
+                    
                     // Ensure tracking is marked as active
                     if !self.isTrackingActive {
                         self.isTrackingActive = true
@@ -122,8 +141,15 @@ class HandTrackingManager {
             case .removed:
                 // Hand tracking lost
                 self.handTransform = nil
+                let wasActive = self.isTrackingActive
                 self.isTrackingActive = false
-                print("Hand tracking lost")
+                
+                // If tracking was active during gameplay, pause the game
+                if wasActive {
+                    trackingLost = true
+                    gameManager?.pauseGame()
+                    print("Hand tracking lost - game paused")
+                }
             }
         }
     }

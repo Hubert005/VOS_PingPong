@@ -51,6 +51,6 @@ enum PropertyGenerator {
     
     /// Generates a random game state
     static func randomGameState() -> GameState {
-        [GameState.idle, .playing, .gameOver].randomElement()!
+        [GameState.idle, .playing, .paused, .gameOver].randomElement()!
     }
 }

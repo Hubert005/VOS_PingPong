@@ -173,4 +173,46 @@ struct GameManagerTests {
         #expect(manager.gameState == .playing, "State should be playing after startGame")
         #expect(manager.isGameActive == true, "Game should be active after startGame")
     }
+    
+    // MARK: - Property 12: UI state synchronization
+    // Feature: ar-pingpong-game, Property 12: UI state synchronization
+    // Validates: Requirements 4.3, 4.4
+    
+    @Test("Property 12: UI state synchronization")
+    func testUIStateSynchronization() throws {
+        try PropertyTestHelper.runPropertyTest(iterations: 100) {
+            // Create a GameManager
+            let manager = GameManager()
+            manager.startGame()
+            
+            // Generate random number of hits
+            let numberOfHits = PropertyGenerator.randomInt(min: 0, max: 100)
+            
+            // Record hits and verify UI would display correct values after each update
+            for i in 1...numberOfHits {
+                manager.recordHit()
+                
+                // Verify that the observable properties are immediately updated
+                // (In SwiftUI, @Observable properties trigger view updates synchronously)
+                #expect(manager.score == i, "Score should be immediately updated to \(i)")
+                #expect(manager.consecutiveHits == i, "Consecutive hits should be immediately updated to \(i)")
+                #expect(manager.gameState == .playing, "Game state should remain playing")
+            }
+            
+            // Test ground collision state update
+            manager.handleGroundCollision()
+            
+            // Verify state changes are immediately reflected
+            #expect(manager.gameState == .gameOver, "Game state should be immediately updated to gameOver")
+            #expect(manager.consecutiveHits == 0, "Consecutive hits should be immediately reset to 0")
+            
+            // Test reset state update
+            manager.resetGame()
+            
+            // Verify reset state is immediately reflected
+            #expect(manager.score == 0, "Score should be immediately reset to 0")
+            #expect(manager.consecutiveHits == 0, "Consecutive hits should remain 0")
+            #expect(manager.gameState == .idle, "Game state should be immediately updated to idle")
+        }
+    }
 }

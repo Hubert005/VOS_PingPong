@@ -55,6 +55,20 @@ class GameManager {
         gameState = .gameOver
     }
     
+    /// Pauses the current game session
+    /// Transitions from playing state to paused state
+    func pauseGame() {
+        guard gameState == .playing else { return }
+        gameState = .paused
+    }
+    
+    /// Resumes the game from paused state
+    /// Transitions from paused state back to playing state
+    func resumeGame() {
+        guard gameState == .paused else { return }
+        gameState = .playing
+    }
+    
     /// Resets the game to initial state
     /// Resets score, consecutive hits, and returns to idle state
     func resetGame() {

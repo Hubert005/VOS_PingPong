@@ -14,10 +14,12 @@ struct ImmersiveView: View {
     
     // Game components
     @State private var gameManager = GameManager()
+    @State private var handTrackingManager: HandTrackingManager?
     @State private var audioManager = AudioManager()
     @State private var collisionHandler: CollisionHandler?
     @State private var collisionSubscription: EventSubscription?
     @State private var ball: BallEntity?
+    @State private var racket: RacketEntity?
 
     var body: some View {
         RealityView { content, attachments in
@@ -38,17 +40,27 @@ struct ImmersiveView: View {
             let wall = WallEntity.create(with: configuration)
             let ballEntity = BallEntity.create(with: configuration)
             let ground = GroundEntity.create(with: configuration)
-            let racket = RacketEntity.create()
+            let racketEntity = RacketEntity.create()
             
-            // Store ball reference for boundary checking
+            // Store references for updates
             ball = ballEntity
+            racket = racketEntity
             
             // Add entities to the scene
             content.add(table)
             content.add(wall)
             content.add(ballEntity)
             content.add(ground)
-            content.add(racket)
+            content.add(racketEntity)
+            
+            // Initialize hand tracking manager
+            let handTracking = HandTrackingManager(gameManager: gameManager)
+            handTrackingManager = handTracking
+            
+            // Start hand tracking
+            Task {
+                await handTracking.startTracking()
+            }
             
             // Add score display attachment
             if let scoreAttachment = attachments.entity(for: "scoreDisplay") {
@@ -69,9 +81,21 @@ struct ImmersiveView: View {
             // Start the game
             gameManager.startGame()
         } update: { content, attachments in
-            // Update loop for boundary checking
+            // Update racket position from hand tracking
+            if let handTracking = handTrackingManager,
+               let racket = racket,
+               let handTransform = handTracking.getHandTransform() {
+                racket.updatePosition(from: handTransform)
+            }
+            
+            // Update loop for boundary checking and velocity clamping
             if let ball = ball, gameManager.isGameActive {
+                // Check and reposition ball if out of bounds
                 ball.repositionIfOutOfBounds()
+                
+                // Clamp ball velocity to prevent unrealistic behavior
+                let configuration = GameConfiguration()
+                ball.clampVelocity(max: configuration.maxBallVelocity)
             }
             
             // Update score display attachment position if needed
@@ -84,6 +108,12 @@ struct ImmersiveView: View {
             if let gameOverAttachment = attachments.entity(for: "gameOverView") {
                 // Position the game over view in the center of the field of view
                 gameOverAttachment.position = SIMD3<Float>(0, 0, -1.5)
+            }
+            
+            // Update tracking lost view attachment position if needed
+            if let trackingLostAttachment = attachments.entity(for: "trackingLostView") {
+                // Position the tracking lost view in the center of the field of view
+                trackingLostAttachment.position = SIMD3<Float>(0, 0, -1.5)
             }
         } attachments: {
             Attachment(id: "scoreDisplay") {
@@ -112,6 +142,17 @@ struct ImmersiveView: View {
                     }
                 }
             }
+            
+            // Tracking Lost View - only shown when hand tracking is lost during gameplay
+            if let handTracking = handTrackingManager, handTracking.trackingLost {
+                Attachment(id: "trackingLostView") {
+                    TrackingLostView()
+                }
+            }
+        }
+        .onDisappear {
+            // Clean up hand tracking when view disappears
+            handTrackingManager?.stopTracking()
         }
     }
 }

@@ -39,6 +39,11 @@ enum PropertyGenerator {
         Int.random(in: min...max)
     }
     
+    /// Generates a random float in the specified range
+    static func randomFloat(min: Float = 0.0, max: Float = 1.0) -> Float {
+        Float.random(in: min...max)
+    }
+    
     /// Generates a random boolean
     static func randomBool() -> Bool {
         Bool.random()
